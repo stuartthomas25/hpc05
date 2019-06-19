@@ -155,9 +155,11 @@ def start_remote_ipcluster(
     if env_path is None:
         env_path = ""
 
+    python_path = os.path.join(os.path.expanduser(env_path),"bin", "python")
+
     with setup_ssh(hostname, username, password) as ssh:
         cmd = f"import hpc05; hpc05.start_ipcluster({n}, '{profile}', '{env_path}', {timeout})"
-        cmd = f'python -c "{cmd}"'
+        cmd = f'{python_path} -c "{cmd}"'
         stdin, stdout, stderr = ssh.exec_command(cmd, get_pty=True)
         wait_for_succesful_start(stdout, timeout=timeout)
 
@@ -396,7 +398,7 @@ def start_remote_and_connect(
         LoadedBalancedView, equivalent to `client.load_balanced_view()`.
     """
     if kill_old_ipcluster:
-        kill_remote_ipcluster(hostname, username, password)
+        kill_remote_ipcluster(hostname, username, password, env_path)
         print("Killed old intances of ipcluster.")
 
     start_remote_ipcluster(n, profile, hostname, username, password, env_path, timeout)
@@ -458,7 +460,7 @@ def kill_ipcluster(name=None):
         process.wait()
 
 
-def kill_remote_ipcluster(hostname="hpc05", username=None, password=None):
+def kill_remote_ipcluster(hostname="hpc05", username=None, password=None, env_path=''):
     """Kill your remote ipcluster and cleanup the files.
 
     This should do the same as the following bash function (recommended:
@@ -475,9 +477,12 @@ def kill_remote_ipcluster(hostname="hpc05", username=None, password=None):
     }
     ```
     """
+
+    python_path = os.path.join(os.path.expanduser(env_path),"bin", "python")
+
     with setup_ssh(hostname, username, password) as ssh:
         cmd = f"import hpc05; hpc05.connect.kill_ipcluster()"
-        cmd = f'python -c "{cmd}"'
+        cmd = f'{python_path} -c "{cmd}"'
         stdin, stdout, stderr = ssh.exec_command(cmd, get_pty=True)
         with suppress(Exception):
             lines = stdout.readlines()
